@@ -22,4 +22,3 @@ Learn more about using Distill for R Markdown at <https://rstudio.github.io/dist
 
 
 
-
