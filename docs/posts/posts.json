@@ -1,5 +1,22 @@
 [
   {
+    "path": "posts/2022-03-16-challenges/",
+    "title": "Challenges",
+    "description": "A short description of the post.",
+    "author": [
+      {
+        "name": "Nora Jones",
+        "url": "https://example.com/norajones"
+      }
+    ],
+    "date": "2022-03-16",
+    "categories": [],
+    "contents": "\r\nDistill is a publication format for scientific and technical writing, native to the web.\r\nLearn more about using Distill at https://rstudio.github.io/distill.\r\n\r\n\r\n\r\n",
+    "preview": {},
+    "last_modified": "2022-03-16T17:26:08-04:00",
+    "input_file": {}
+  },
+  {
     "path": "posts/welcome/",
     "title": "Welcome to Jason OConnell",
     "description": "Welcome to our new blog, Jason OConnell. We hope you enjoy \nreading what we have to say!",
