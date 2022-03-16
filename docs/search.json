@@ -1,0 +1,20 @@
+{
+  "articles": [
+    {
+      "path": "about.html",
+      "title": "About this blog",
+      "description": "Some additional details about the blog",
+      "author": [],
+      "contents": "\r\n\r\n\r\n\r\n",
+      "last_modified": "2022-03-16T16:31:54-04:00"
+    },
+    {
+      "path": "index.html",
+      "title": "Jason OConnell",
+      "author": [],
+      "contents": "\r\n\r\n\r\n\r\n",
+      "last_modified": "2022-03-16T16:31:57-04:00"
+    }
+  ],
+  "collections": ["posts/posts.json"]
+}
