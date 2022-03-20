@@ -6,7 +6,7 @@
       "description": "Some additional details about the blog",
       "author": [],
       "contents": "\r\n\r\n\r\n\r\n",
-      "last_modified": "2022-03-16T17:26:18-04:00"
+      "last_modified": "2022-03-16T17:29:27-04:00"
     },
     {
       "path": "Challenges.html",
@@ -20,14 +20,14 @@
       ],
       "date": "`r Sys.Date()`",
       "contents": "\r\nDistill is a publication format for scientific and technical writing, native to the web.\r\nLearn more about using Distill for R Markdown at https://rstudio.github.io/distill.\r\n\r\n\r\n\r\n",
-      "last_modified": "2022-03-16T17:26:19-04:00"
+      "last_modified": "2022-03-16T17:29:28-04:00"
     },
     {
       "path": "index.html",
       "title": "Jason OConnell",
       "author": [],
       "contents": "\r\n\r\n\r\n\r\n",
-      "last_modified": "2022-03-16T17:26:19-04:00"
+      "last_modified": "2022-03-16T17:29:28-04:00"
     }
   ],
   "collections": ["posts/posts.json"]

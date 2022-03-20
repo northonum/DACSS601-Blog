@@ -1,0 +1,177 @@
+---
+title: "HW4 - ATP Tennis Statiistics"
+description: "Expanded analysis of match statitistics spanning multiple decades of ATP Professional Tennis seasons."
+author: "Jason O'Connell"
+date: "`r Sys.Date()`"
+output: distill::distill_article
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## HW4 Overview
+
+This is homework assignment #4 for Jason O'Connell. I have found some interesting data on profession tennis on github and I think I will use this for my final project. 
+
+For this homework I will bring in a few data file from various years and try somethings to compare the data between files
+
+## Initialize Libraries
+
+```{r init_libraries}
+library(tidyverse)
+library(readr)
+library(readxl)
+library(dplyr)
+library(ggplot2)
+```
+
+## Read the data
+First read ATP data files, here I am using only the results from 1980, 1990, 2000, 2010 from GITHUB source
+
+
+```{r Read 1980s ATP file from Github}
+ATP1980 <- read.csv("https://raw.githubusercontent.com/JeffSackmann/tennis_atp/master/atp_matches_1980.csv")
+ATP1990 <- read.csv("https://raw.githubusercontent.com/JeffSackmann/tennis_atp/master/atp_matches_1990.csv")
+ATP2000 <- read.csv("https://raw.githubusercontent.com/JeffSackmann/tennis_atp/master/atp_matches_2000.csv")
+ATP2010 <- read.csv("https://raw.githubusercontent.com/JeffSackmann/tennis_atp/master/atp_matches_2010.csv")
+```
+
+## Including Improved HW3 Plot
+First I will improve on my visuals from last HW and look at them with the new data from this homework. 
+
+```{r Plot height difference, counts by surface}
+# ATP1980 %>%
+#   drop_na(winner_ht, loser_ht) %>%
+#   group_by(winner_ht, loser_ht) %>%
+#   summarise(winner_ht,loser_ht, count = n())
+
+ggplot( ATP1980 %>%
+          drop_na(winner_ht, loser_ht) %>%
+          mutate(ht_diff=winner_ht-loser_ht) %>%
+          group_by(surface, ht_diff) %>%
+          summarise(surface, ht_diff, count = n()), aes(x=ht_diff, y=count)) + 
+  geom_point(aes(color=surface)) +
+  geom_smooth(aes(color=surface)) +
+  labs(title="1980 Match Winner vs. Loser Height Differance by Surface", x="Height Difference", y="Number of Matches")
+```
+## Insights
+
+This graphs is a huge improvement over what I was doing in the last HW. Learning geom_smooth() in tutorial 6 really helps. I can quickly see the blank surface data is sort of noise that I should eliminate. Also can see pretty easily the the data is skewed toward the taller player winning but also the more matches are played on clay then hard, then carpet?, and finally grass. I am not sure they even play on carpet anymore - we will check in the 2010 file.
+
+In the other files missing court surface isn't an issue. Let'e redo 1980 eliminating the missing surface rows and inlcude the other years with the same plot:
+
+## 1980
+
+```{r Plot height difference, counts by surface - 1980}
+
+ggplot( ATP1980 %>%
+          drop_na(winner_ht, loser_ht) %>%
+          filter(!grepl('clay|hard|carpet|grass', surface)) %>%
+          mutate(ht_diff=winner_ht-loser_ht) %>%
+          group_by(surface, ht_diff) %>%
+          summarise(surface, ht_diff, count = n()), aes(x=ht_diff, y=count)) + 
+  geom_point(aes(color=surface)) +
+  geom_smooth(aes(color=surface)) +
+  labs(title="1980 Match Winner vs. Loser Height Differance by Surface", x="Height Difference", y="Number of Matches")
+```
+
+Well can't figure out why that didn't work? I am hoping to eliminate the null or blank surface using grepl.
+
+## 1990
+
+```{r Plot height difference, counts by surface - 1990}
+ggplot( ATP1990 %>%
+          drop_na(winner_ht, loser_ht) %>%
+          mutate(ht_diff=winner_ht-loser_ht) %>%
+          group_by(surface, ht_diff) %>%
+          summarise(surface, ht_diff, count = n()), aes(x=ht_diff, y=count)) + 
+  geom_point(aes(color=surface)) +
+  geom_smooth(aes(color=surface)) +
+  labs(title="1990 Match Winner vs. Loser Height Differance by Surface", x="Height Difference", y="Number of Matches")
+```
+
+That one looks pretty good.
+
+## 2000
+
+```{r Plot height difference, counts by surface - 2000}
+ggplot( ATP2000 %>%
+          drop_na(winner_ht, loser_ht) %>%
+          mutate(ht_diff=winner_ht-loser_ht) %>%
+          group_by(surface, ht_diff) %>%
+          summarise(surface, ht_diff, count = n()), aes(x=ht_diff, y=count)) + 
+  geom_point(aes(color=surface)) +
+  geom_smooth(aes(color=surface)) +
+  labs(title="2000 Match Winner vs. Loser Height Differance by Surface", x="Height Difference", y="Number of Matches")
+```
+
+Same for this one.
+
+## 2010
+
+```{r Plot height difference, counts by surface - 2010}
+ggplot( ATP2010 %>%
+          drop_na(winner_ht, loser_ht) %>%
+          filter(!grepl('clay|hard|grass', surface)) %>%
+          mutate(ht_diff=winner_ht-loser_ht) %>%
+          group_by(surface, ht_diff) %>%
+          summarise(surface, ht_diff, count = n()), aes(x=ht_diff, y=count)) +
+  geom_point(aes(color=surface)) +
+  geom_smooth(aes(color=surface)) +
+  labs(title="2010 Match Winner vs. Loser Height Differance by Surface", x="Height Difference", y="Number of Matches")
+```
+
+Hmmm I've got a weird outlier - let's get rid of that.
+
+## 2010v2
+
+```{r Plot height difference, counts by surface - 2010v2}
+ggplot( ATP2010 %>%
+          drop_na(winner_ht, loser_ht) %>%
+          filter(!grepl('clay|hard|grass', surface)) %>%
+          mutate(ht_diff=winner_ht-loser_ht) %>%
+         filter(ht_diff < 100) %>%
+          group_by(surface, ht_diff) %>%
+          summarise(surface, ht_diff, count = n()), aes(x=ht_diff, y=count)) +
+  geom_point(aes(color=surface)) +
+  geom_smooth(aes(color=surface)) +
+  labs(title="2010 Match Winner vs. Loser Height Differance by Surface", x="Height Difference", y="Number of Matches")
+```
+
+Eliminated the outlier but geom_smooth still didn't work for this one weird.
+
+## Combine the data and compare years
+
+Now I will combine the data sets and see what it looks like over the decades. First let's look at the violin chart.
+
+```{r Plot Height difference by season violin}
+ggplot( bind_rows(mutate(ATP1980,season = "1980"),mutate(ATP1990, season = "1990"), mutate(ATP2000, season = "2000"), mutate(ATP2010, season = "2010")) %>%
+         drop_na(winner_ht, loser_ht) %>%
+         mutate(ht_diff=winner_ht-loser_ht) %>%
+         filter(ht_diff < 100) %>%
+         group_by(season, ht_diff) %>%
+         summarise(season, ht_diff, count = n()), aes(x=season, y=ht_diff, fill=season)) + 
+  geom_violin() +
+  labs(title="Match Winner vs. Loser Height Differance by Season", x="Season", y="Height Differance")
+```
+
+## Combined Data Files - Second try
+
+```{r Plot Height difference by season}
+ggplot( bind_rows(mutate(ATP1980,season = "1980"),mutate(ATP1990, season = "1990"), mutate(ATP2000, season = "2000"), mutate(ATP2010, season = "2010")) %>%
+         drop_na(winner_ht, loser_ht) %>%
+         mutate(ht_diff=winner_ht-loser_ht) %>%
+         filter(ht_diff < 100) %>%
+         group_by(season, ht_diff) %>%
+         summarise(season, ht_diff, count = n()), aes(x=ht_diff, y=count)) + 
+  geom_point(aes(color=season)) +
+  geom_smooth(aes(color=season)) +
+  labs(title="Match Winner vs. Loser Height Differance by Season", x="Height Difference", y="Number of Matches")
+```
+
+
+## Results
+New stuff used: filter, bind_rows, geom_smooth
+Unsuccessfully used: grepl, geom_smooth(2010)
+Despite racket technology, fitness, and several other factors have changed the game over the years difference in player heigh doesn't seem to predict the winner of a match.

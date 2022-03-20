@@ -1,0 +1,94 @@
+---
+title: "HW3 - ATP Tennis 1980"
+description: "Analysis of player height and match outcomes during the 1980 ATP Professional Tennis season."
+author: "Jason O'Connell"
+date: "`r Sys.Date()`"
+output: distill::distill_article
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## HW3 Overview
+
+This is homework assignment #3 for Jason O'Connell. I have found some interesting data on profession tennis on github and I think I will use this for my final project. I will try to find something interesting to analyze. Current thoughts including looking at the number of matches per year necessary to achieve a ranking that supports sufficient prize winnings. There is a big problem in professional tennis that is hidden by the top professional making millions. Many, many, many players ranked under 100 in the world are required to make the sport what it is but these players barely survive. I would like to see the number of low ranking players cycling through the ATP to support the high ranking millions years.
+
+Maybe initial question for this homework can be relevance of height of match winner on different court surfaces. Theory: Height matters more on grass than hard than clay???
+
+Initialize Libraries
+
+```{r init_libraries}
+library(tidyverse)
+library(readr)
+library(readxl)
+library(dplyr)
+library(ggplot2)
+```
+
+## Read the data
+First read ATP data file, here I am using only the results from 1980 from GITHUB source
+
+
+```{r Read 1980s ATP file from Github}
+ATP1980 <- read.csv("https://raw.githubusercontent.com/JeffSackmann/tennis_atp/master/atp_matches_1980.csv")
+```
+
+## Including Plots
+Let's start with a basic plot of the player heights by winners and losers.
+
+```{r Plot Heights}
+ggplot(ATP1980, aes(x=winner_ht, y=loser_ht)) + 
+  geom_point() + 
+  labs(title="Tennis matches winner vs. loser height", x="Winner Height (cm)", y="Loser Height (CM)")
+```
+## 
+Well that was not very informative - since the frequency of the occurrences is somewhat obscured. Let's try including some way to show the frequency of occurances using size of the dot.
+
+```{r Plot Height and Count}
+# ATP1980 %>%
+#           group_by(winner_ht, loser_ht) %>%
+#           summarise(winner_ht,loser_ht, count = n())
+
+ggplot( ATP1980 %>%
+          group_by(winner_ht, loser_ht) %>%
+          summarise(winner_ht,loser_ht, count = n()), aes(x=winner_ht, y=loser_ht)) + 
+  geom_point(aes(size=count)) +
+  labs(title="Tennis matches winner vs. loser height", x="Winner Height (cm)", y="Loser Height (cm)")
+```
+##
+That is nicer looking but still not very informative. I don't see any pattern to indicate height advantage
+Let's compute the height difference between the winner and the loser, the number of occurances and start including the court surface. 
+
+```{r Plot height difference, counts by surface}
+# ATP1980 %>%
+#   drop_na(winner_ht, loser_ht) %>%
+#   group_by(winner_ht, loser_ht) %>%
+#   summarise(winner_ht,loser_ht, count = n())
+
+ggplot( ATP1980 %>%
+          drop_na(winner_ht, loser_ht) %>%
+          mutate(ht_diff=winner_ht-loser_ht) %>%
+          group_by(surface, ht_diff) %>%
+          summarise(surface, ht_diff, count = n()), aes(x=ht_diff, y=count)) + 
+  geom_point(aes(color=surface)) +
+  labs(title="Match Winner vs. Loser Height Differance by Surface", x="Height Difference", y="Number of Matches")
+```
+```{r Plot Height difference by surface violin}
+# ATP1980 %>%
+#   drop_na(winner_ht, loser_ht) %>%
+#   group_by(winner_ht, loser_ht) %>%
+#   summarise(winner_ht,loser_ht, count = n())
+
+ggplot( ATP1980 %>%
+          drop_na(winner_ht, loser_ht) %>%
+          mutate(ht_diff=winner_ht-loser_ht) %>%
+          group_by(surface, ht_diff) %>%
+          summarise(surface, ht_diff, count = n()), aes(x=surface, y=ht_diff, fill=surface)) + 
+  geom_violin() +
+  labs(title="Match Winner vs. Loser Height Differance by Surface", x="Surface", y="Height Differance")
+```
+
+## Results
+Well I think I used a number of new functions and saw some interesting data. I don't think height has as significant a role in the winner and losers on the ATP tour in 1980. I wonder if this is still the case in the 2010s/20s now that racket technology, fitness, and several other factors have changed the game so much. More to come...
+
