@@ -1,20 +1,62 @@
 ---
 title: "Challenges"
 description: |
-  A short description of the post.
-author:
-  - name: Nora Jones
-    url: https://example.com/norajones
-date: 2022-03-16
-output:
-  distill::distill_article:
-    self_contained: false
+  This routine will include some of the challenges that were posted each week but that I haven't really tried until now.
+author: "Jason O'Connell"
+date: "`r Sys.Date()`"
+output: distill::distill_article
 ---
 
-
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(echo = TRUE)
 ```
+
+## Initialize Libraries
+
+```{r init_libraries}
+library(tidyverse)
+library(readr)
+library(readxl)
+library(dplyr)
+library(ggplot2)
+```
+
+Challenges:
+
+- Create your first Rpubs or github distill post. Advanced: publish a personal distill blog using github pages.
+
+I have now created a personal blog for DACSS 601 on Github and will keep all posts here!
+
+- Read in clean data; (intermediate) read in uncleaned railroad data; read in uncleaned australian marriage data; (additional) install tex and try knitting to pd; try using dbconnect to read in data from sql; 
+
+```{r Challenge0202}
+rr_county <- read.csv("_data/Clean/railroad_2012_clean_county_tidy.csv")
+rr_state <- read.csv("_data/Clean/railroad_2012_clean_state.csv")
+aussie_marriage <- read_excel("_data/Unclean/australian_marriage_law_postal_survey_2017_-_response_final.xls", sheet = "Table 2", na = "", skip = 6) %>%
+  select(1:2,4,9,11,13) %>%
+  rename(town = 1, "response_clear:yes" = 2, "response_clear:no" = 3, "eligible:yes" = 4, "eligible:no" = 5, "eligible:noresponse" = 6) %>%
+  filter(str_detect(town, "Divisions", negate=TRUE), str_detect(town, "(Total)", negate=TRUE)) %>%
+  pivot_longer(cols = 2:6, names_to = "temp") %>%
+  separate(temp, into = c("q","r"), sep = ":")
+  
+
+head(rr_county)
+head(rr_state)
+head(aussie_marriage)
+
+```
+
+
+- try an earlier challenge; try a pivot_longer, maybe with eggs data (clean or unclean); read a single sheet of active duty military data; read in hotels data and try grouping and graphing; (advanced) try using couch_db
+
+- try an earlier challenge; try using transactional data, grouping, and then visualizing grouped statistics; (intermediate) try graphing data with time on the x axis; (advanced) try reading in the active duty military dataset (one sheet only); 
+
+- Try an earlier challenge; try using lubridate to transform non-date variables to dates (e.g, in eggs dataset); try using facet_wrap or facet_grid; try reading in a single sheet of active duty military data
+
+- Try an earlier challenge; try to figure out the messy data at https://docs.google.com/spreadsheets/d/1N3FpC8k_0jNiA6uYkFP0JITzxDfh83oGalkRVo9ZBgc/edit#gid=2009914420
+
+- We will work on dates using lubridate in the next session.  One challenge would be to try to create a minimal working example to post in a help request.
+
 
 Distill is a publication format for scientific and technical writing, native to the web.
 
