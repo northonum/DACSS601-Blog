@@ -44,10 +44,35 @@ head(rr_county)
 head(rr_state)
 head(aussie_marriage)
 
+aussie_marriage %>%
+  filter(q == "response_clear") %>% 
+  drop_na() %>%
+  group_by(r) %>%
+  summarize(r, total = sum(value)) %>%
+  distinct() %>%
+  ggplot(aes(x=r, y=total)) +
+    geom_point()
+
 ```
 
 
 - try an earlier challenge; try a pivot_longer, maybe with eggs data (clean or unclean); read a single sheet of active duty military data; read in hotels data and try grouping and graphing; (advanced) try using couch_db
+
+I did a pivot longer in the previous challenge and in HW2.
+
+```{r challenge 0209}
+ActiveDutyMilitary <- read_excel("_data/Unclean/ActiveDuty_MaritalStatus.xls", sheet = "TotalDoD", skip = 8) %>%
+  select(2:4,6,7,9,10,12,13) %>%
+  rename(paygrade = 1, "single::yes:male" = 2, "single::yes:female" = 3, "single::no:male" = 4, "single::no:female" = 5, "married:military::male" = 6, "married:military::female" = 7,"married:civilian::male" = 8, "married:civilian::female" = 9) %>%
+  filter(str_detect(paygrade, "TOTAL", negate = TRUE)) %>%
+  pivot_longer(cols = 2:9, names_to = "temp") %>%
+  separate(paygrade, into = c("Class","level"), sep = "-") %>%
+  separate(temp, into = c("married","spouse","chidren","gender"), sep = ":")
+
+head(ActiveDutyMilitary)
+
+```
+
 
 - try an earlier challenge; try using transactional data, grouping, and then visualizing grouped statistics; (intermediate) try graphing data with time on the x axis; (advanced) try reading in the active duty military dataset (one sheet only); 
 
