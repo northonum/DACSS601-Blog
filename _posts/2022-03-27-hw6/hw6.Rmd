@@ -1,0 +1,129 @@
+---
+title: "ATP Tennis Analysis - Homework 6 / Final Project Draft 1"
+description: "First Draft of Final Project - Using ATP Tennis Data Files will begin some analysis of player populations and success."
+author: "Jason O'Connell"
+date: "`r Sys.Date()`"
+output: 
+  distill::distill_article:
+    code_folding: true
+    toc: true
+    toc_depth: 2
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Latest Overview
+
+ATP Tennis Statistics Analysis - Iteration 6
+
+For this iteration:
+I will begin exploring total player population, results of various sub-populations and  prize money from tournament performance. I am interested to understand the equity versus pay for performance in the game. First I will develop routines for categorizing the data data for XX years but later will bringing more years data.
+
+## Initialize Libraries
+
+```{r init_libraries}
+library(tidyverse)
+library(readr)
+library(readxl)
+library(dplyr)
+library(ggplot2)
+library(rmarkdown)
+library(kableExtra)
+```
+
+## Read the data
+First read ATP data files, here I am using only the results from 1980, 1990, 2000, 2010 from GITHUB source.
+
+(Eventually I want to read many more years using a for loop and/or function)
+
+The data includes detailed information about each match played on the ATP tour in a given year.
+Tournament Data: tourney-id (YYYY-###), tourney_name, surface, draw_size, tourney_level, tourney_date
+Match Data: match_num, score, best_of, minutes, round
+Player Data (for each winner & loser): _id, _seed, _entry (WC, Q), _name, _hand, _height, _ioc, _age, _rank, _points
+Match Statistics (for each w & l): _ace, _df, _svpt, _1stIn, _1stWon, _2ndWon, _svGms, _bpSaved, _bpFaced 
+
+
+```{r Read 1980s ATP file from Github}
+ATP1980 <- read.csv("https://raw.githubusercontent.com/JeffSackmann/tennis_atp/master/atp_matches_1980.csv")
+ATP1990 <- read.csv("https://raw.githubusercontent.com/JeffSackmann/tennis_atp/master/atp_matches_1990.csv")
+ATP2000 <- read.csv("https://raw.githubusercontent.com/JeffSackmann/tennis_atp/master/atp_matches_2000.csv")
+ATP2010 <- read.csv("https://raw.githubusercontent.com/JeffSackmann/tennis_atp/master/atp_matches_2010.csv")
+```
+
+## Create Working Data Set
+
+This will require further development but for starts I will manually append the data sets into a working version.
+
+tourney_level "D" is for Davis Cup - I will exclude this from my study for now.
+ 
+```{r Create working data set}
+ATP_Base<-bind_rows(mutate(ATP1980,season = "1980"),mutate(ATP1990, season = "1990"), mutate(ATP2000, season = "2000"), mutate(ATP2010, season = "2010")) %>%
+  filter(!str_detect("D", tourney_level))
+
+paged_table(head(ATP_Base,100))
+
+```
+
+## Base Statistics
+
+Lets start with some simple statistics by year. ^[Only ATP tournament matches are include. Excludes Davis Cup, Challenge, etc.]
+
+```{r}
+ATP_Base %>%
+  group_by(season) %>%
+  summarize(season, num_matches = n()) %>%
+  distinct() %>%
+  kable(col.names = c("Season","Total Matches"), caption = "Number of Tournament Matches by Year")
+```
+
+<aside>
+Excluding Davis Cup Matches
+</aside>
+
+
+```{r}
+ATP_Base %>%
+  select(season,tourney_id) %>%
+  distinct() %>%
+  group_by(season) %>%
+  summarize(season, num_tournaments = n()) %>%
+  distinct() %>%
+  kable(col.names = c("Season","Tournaments"), caption = "Number of Tournaments by Year")
+```
+
+```{R}
+bind_rows(
+  ATP_Base %>%
+    select(season,winner_id) %>%
+    distinct(),
+  ATP_Base %>%
+    select(season,loser_id) %>%
+    distinct()
+) %>%
+  group_by(season) %>%
+  summarize(season, num_players = n()) %>%
+  distinct() %>%
+  kable(col.names = c("Season","Players"), caption = "Number of Players by Year")
+
+```
+
+```{r}
+ATP_Base %>%
+    select(season,winner_id, winner_name) %>%
+    group_by(season, winner_id, winner_name) %>%
+    summarize(season, winner_id, winner_name, num_wins = n()) %>%
+    distinct() %>%
+    arrange(desc(num_wins)) %>%
+    head(20)%>%
+    kable(col.names = c("Season","Player ID","Player Name","Wins"), caption = "Top Winners")%>%
+    remove_column(c(2))
+```
+
+
+Distill is a publication format for scientific and technical writing, native to the web.
+
+Learn more about using Distill at <https://rstudio.github.io/distill>.
+
+
