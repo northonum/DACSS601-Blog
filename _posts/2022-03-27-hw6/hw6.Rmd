@@ -21,6 +21,11 @@ ATP Tennis Statistics Analysis - Iteration 6
 For this iteration:
 I will begin exploring total player population, results of various sub-populations and  prize money from tournament performance. I am interested to understand the equity versus pay for performance in the game. First I will develop routines for categorizing the data data for XX years but later will bringing more years data.
 
+Also for this iteration I have tried the following new things:
+RMarkdown features: TOC, aside, code_folding
+
+paged_table, kable, full_join, and arrange.
+
 # Initialize Libraries
 
 ```{r init_libraries}
@@ -167,6 +172,8 @@ player_table%>%
 
 ## Player total wins histogram
 
+This is a key chart that is beginning to paint the picture about how many ATP players are participating in tournaments but winning very few matches. 
+
 ```{r}
 player_table%>%
   select(season, player_id, num_wins)%>%
@@ -182,6 +189,8 @@ player_table%>%
 ```
 ## Players total wins point chart 
 
+This chart demonstrates that same point but visually it is a little more diffcult to see the trend given how many player literally win 0-1 match all year.
+
 ```{r}
 player_table%>%
   select(season, player_id, num_wins)%>%
@@ -189,14 +198,16 @@ player_table%>%
   summarize(season, num_wins, count = n())%>%
   distinct()%>%
   ggplot(aes(x=num_wins, y=count))+
-#  scale_y_manual(values = c(0,25,50,75,100))+
   geom_point(color = "Blue")+
   geom_smooth(fill = "SkyBlue") +
   facet_grid(cols = vars(season))+
-  labs(title="Number of ATP players and win total", x="Wins", y="Number of Players")
+  labs(title="Number of ATP players and win totals", x="Wins", y="Number of Players")
 
 ```
 
+# Conclusion
+
+For this HW 6 - I've started working with the part of the data set to support my hypothesis that there are many, many players at the fringe of ATP who are not winning enough matches to support there career. At the same time there are a select few who win the majority of matches (and associate prize money) but it's all made possible by those striving for the top but never making it.
 
 Distill is a publication format for scientific and technical writing, native to the web.
 
