@@ -8,7 +8,17 @@ output:
     code_folding: true
     toc: true
     toc_depth: 2
+spacing: single
 ---
+
+```{css}
+ul {
+  line-height: 0;
+}
+li {
+  line-height: 0;
+}
+...
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -45,10 +55,48 @@ First read ATP data files, here I am using only the results from 1980, 1990, 200
 (Eventually I want to read many more years using a for loop and/or function)
 
 The data includes detailed information about each match played on the ATP tour in a given year.
-Tournament Data: tourney-id (YYYY-###), tourney_name, surface, draw_size, tourney_level, tourney_date
-Match Data: match_num, score, best_of, minutes, round
-Player Data (for each winner & loser): _id, _seed, _entry (WC, Q), _name, _hand, _height, _ioc, _age, _rank, _points
-Match Statistics (for each w & l): _ace, _df, _svpt, _1stIn, _1stWon, _2ndWon, _svGms, _bpSaved, _bpFaced 
+
+* Tournament Data 
+
+  + tourney-id (YYYY-###)  
+  + tourney_name
+  +  surface
+  + draw_size
+  + tourney_level 
+  + tourney_date
+
+* Match Data
+
+  + match_num
+  + score
+  + best_of
+  + minutes
+  + round
+
+* Player Data (for each winner & loser): 
+
+  + _id
+  + _seed
+  + _entry (WC, Q)
+  + _name
+  + _hand
+  + _height
+  + _ioc
+  + _age
+  + _rank
+  + _points
+
+* Match Statistics (for each w & l): 
+
+  + _ace
+  + _df
+  + _svpt
+  + _1stIn
+  + _1stWon
+  + _2ndWon
+  + _svGms
+  + _bpSaved
+  + _bpFaced 
 
 
 ```{r Read 1980s ATP file from Github}
