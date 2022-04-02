@@ -1,0 +1,284 @@
+---
+title: "ATP Tennis Analysis - Final Project (Draft)"
+description: "First Draft of Final Project - Using ATP Tennis Data Files will begin some analysis of player populations and success."
+author: "Jason O'Connell"
+date: "`r Sys.Date()`"
+output: 
+  distill::distill_article:
+    code_folding: true
+    toc: true
+    toc_depth: 2
+spacing: single
+---
+
+```{css}
+ul {
+  line-height: 0;
+}
+li {
+  line-height: 0;
+}
+...
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Latest Overview
+
+ATP Tennis Statistics Analysis - Iteration 6
+
+For this iteration:
+I will begin exploring total player population, results of various sub-populations and  prize money from tournament performance. I am interested to understand the equity versus pay for performance in the game. First I will develop routines for categorizing the data data for XX years but later will bringing more years data.
+
+Also for this iteration I have tried the following new things:
+RMarkdown features: TOC, aside, code_folding
+
+paged_table, kable, full_join, and arrange.
+
+# Initialize Libraries
+
+```{r init_libraries}
+library(tidyverse)
+library(readr)
+library(readxl)
+library(dplyr)
+library(ggplot2)
+library(treemapify)
+library(rmarkdown)
+library(kableExtra)
+```
+
+# Read the data
+
+First read ATP data files, here I am using only the results from 1980, 1990, 2000, 2010 from GITHUB source.
+
+(Eventually I want to read many more years using a for loop and/or function)
+
+The data includes detailed information about each match played on the ATP tour in a given year.
+
+* Tournament Data 
+
+  + tourney-id (YYYY-###)  
+  + tourney_name
+  +  surface
+  + draw_size
+  + tourney_level 
+  + tourney_date
+
+* Match Data
+
+  + match_num
+  + score
+  + best_of
+  + minutes
+  + round
+
+* Player Data (for each winner & loser): 
+
+  + _id
+  + _seed
+  + _entry (WC, Q)
+  + _name
+  + _hand
+  + _height
+  + _ioc
+  + _age
+  + _rank
+  + _points
+
+* Match Statistics (for each w & l): 
+
+  + _ace
+  + _df
+  + _svpt
+  + _1stIn
+  + _1stWon
+  + _2ndWon
+  + _svGms
+  + _bpSaved
+  + _bpFaced 
+
+
+```{r Read 1980s ATP file from Github}
+ATP1980 <- read.csv("https://raw.githubusercontent.com/JeffSackmann/tennis_atp/master/atp_matches_1980.csv")
+ATP1990 <- read.csv("https://raw.githubusercontent.com/JeffSackmann/tennis_atp/master/atp_matches_1990.csv")
+ATP2000 <- read.csv("https://raw.githubusercontent.com/JeffSackmann/tennis_atp/master/atp_matches_2000.csv")
+ATP2010 <- read.csv("https://raw.githubusercontent.com/JeffSackmann/tennis_atp/master/atp_matches_2010.csv")
+```
+
+# Create Working Data Set
+
+This will require further development but for starts I will manually append the data sets into a working version.
+
+tourney_level "D" is for Davis Cup - I will exclude this from my study for now.
+ 
+```{r Create working data set}
+ATP_Base<-bind_rows(mutate(ATP1980,season = "1980"),mutate(ATP1990, season = "1990"), mutate(ATP2000, season = "2000"), mutate(ATP2010, season = "2010")) %>%
+  filter(!str_detect("D", tourney_level))
+
+paged_table(head(ATP_Base,100))
+
+#rm(list = c("ATP1980","ATP1990","ATP2000","ATP2010"))
+
+```
+
+# Base Statistics
+
+Lets start with some simple statistics by year. ^[Only ATP tournament matches are include. Excludes Davis Cup, Challenge, etc.]
+
+## Tournament Matches
+
+```{r}
+ATP_Base %>%
+  group_by(season) %>%
+  summarize(season, num_matches = n()) %>%
+  distinct() %>%
+  kable(col.names = c("Season","Total Matches"), caption = "Number of Tournament Matches by Year")
+```
+
+<aside>
+Excluding Davis Cup Matches
+</aside>
+
+## Tournaments
+
+```{r}
+ATP_Base %>%
+  select(season,tourney_id) %>%
+  distinct() %>%
+  group_by(season) %>%
+  summarize(season, num_tournaments = n()) %>%
+  distinct() %>%
+  kable(col.names = c("Season","Tournaments"), caption = "Number of Tournaments by Year")
+```
+
+## Players
+
+```{R}
+bind_rows(
+  ATP_Base %>%
+    select(season,winner_id) %>%
+    distinct(),
+  ATP_Base %>%
+    select(season,loser_id) %>%
+    distinct()
+) %>%
+  group_by(season) %>%
+  summarize(season, num_players = n()) %>%
+  distinct() %>%
+  kable(col.names = c("Season","Players"), caption = "Number of Players by Year")
+
+```
+
+## Top Winners
+
+```{r}
+ATP_Base %>%
+    select(season,winner_id, winner_name) %>%
+    group_by(season, winner_id, winner_name) %>%
+    summarize(season, winner_id, winner_name, num_wins = n()) %>%
+    distinct() %>%
+    arrange(desc(num_wins)) %>%
+    head(20)%>%
+    kable(col.names = c("Season","Player ID","Player Name","Wins"), caption = "Top Winners")%>%
+    remove_column(c(2))
+```
+
+# Create Player Statistics Table
+
+```{r}
+player_table<-full_join(
+  ATP_Base %>%    
+    select(season,winner_id, winner_name) %>%
+    group_by(season, winner_id, winner_name) %>%
+    summarize(season, winner_id, winner_name, num_wins = n()) %>%
+    distinct() %>%
+    rename(player_id = winner_id, player_name = winner_name),
+  ATP_Base %>%
+    select(season,loser_id, loser_name) %>%
+    group_by(season, loser_id, loser_name) %>%
+    summarize(season, loser_id, loser_name, num_loses = n()) %>%
+    distinct() %>%
+    rename(player_id = loser_id, player_name = loser_name),
+  by=c("season"="season","player_id"="player_id","player_name"="player_name")
+) %>%
+  mutate(num_matches=num_wins+num_loses, win_percent=100*num_wins/(num_wins+num_loses))
+```
+
+## Player Statistics
+
+```{r}
+player_table%>%
+  select(season, player_id, player_name, win_percent)%>%
+  arrange(desc(win_percent))%>%
+#  top_n(20, win_percent) %>%
+  head(20)%>%
+  kable(digits = 0, col.names = c("Season","Player ID","Player Name","Wins Percent"), caption = "Top Winners")%>%
+  remove_column(c(2))
+
+```
+
+## Player total wins histogram
+
+This is a key chart that is beginning to paint the picture about how many ATP players are participating in tournaments but winning very few matches. 
+
+```{r}
+player_table%>%
+  select(season, player_id, num_wins)%>%
+#  group_by(season, num_wins)%>%
+#  summarize(season, num_wins, count = n())%>%
+#  distinct()%>%
+  ggplot(aes(x=num_wins))+
+  geom_histogram(binwidth = 15, fill = "SkyBlue")+
+#  scale_fill_brewer(palette = "Blues")+
+  facet_grid(rows = vars(season))+
+  labs(title="Number of ATP players and win total (Binwidth=15)", x="Wins", y="Number of Players")
+
+```
+## Players total wins point chart 
+
+This chart demonstrates that same point but visually it is a little more diffcult to see the trend given how many player literally win 0-1 match all year.
+
+```{r}
+player_table%>%
+  select(season, player_id, num_wins)%>%
+  group_by(season, num_wins)%>%
+  summarize(season, num_wins, count = n())%>%
+  distinct()%>%
+  ggplot(aes(x=num_wins, y=count))+
+  geom_point(color = "Blue")+
+  geom_smooth(fill = "SkyBlue") +
+  facet_grid(cols = vars(season))+
+  labs(title="Number of ATP players and win totals", x="Wins", y="Number of Players")
+
+```
+
+## Treemap
+
+Some treemaps
+
+
+```{r}
+player_table%>%
+  select(season, player_name, num_wins)%>%
+  filter(season == "1980")%>%
+  group_by(season, num_wins)%>%
+  summarize(season, num_wins, count = n())%>%
+  distinct()%>%
+  ggplot(aes(area = count, fill = num_wins, label = num_wins
+             ))+
+    geom_treemap()+
+   geom_treemap_text(colour = "white", place = "middle", reflow = T)+
+  labs(title="Number of ATP players and win totals")
+
+```
+
+
+# Conclusion
+
+For this HW 6 - I've started working with the part of the data set to support my hypothesis that there are many, many players at the fringe of ATP who are not winning enough matches to support there career. At the same time there are a select few who win the majority of matches (and associate prize money) but it's all made possible by those striving for the top but never making it.
+
+
+
+
