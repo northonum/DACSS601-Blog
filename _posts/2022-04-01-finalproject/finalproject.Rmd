@@ -205,7 +205,9 @@ player_table<-full_join(
     rename(player_id = loser_id, player_name = loser_name),
   by=c("season"="season","player_id"="player_id","player_name"="player_name")
 ) %>%
+  mutate(num_wins=if_else(is.na(num_wins), as.integer(0), num_wins)) %>%
   mutate(num_matches=num_wins+num_loses, win_percent=100*num_wins/(num_wins+num_loses))
+
 ```
 
 ## Player Statistics
