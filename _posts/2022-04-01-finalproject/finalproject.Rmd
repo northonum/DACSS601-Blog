@@ -26,15 +26,21 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Latest Overview
 
-ATP Tennis Statistics Analysis - Iteration 6
+ATP Tennis Statistics Analysis - Iteration 7
 
 For this iteration:
 I will begin exploring total player population, results of various sub-populations and  prize money from tournament performance. I am interested to understand the equity versus pay for performance in the game. First I will develop routines for categorizing the data data for XX years but later will bringing more years data.
 
-Also for this iteration I have tried the following new things:
-RMarkdown features: TOC, aside, code_folding
+Items to be developed
 
-paged_table, kable, full_join, and arrange.
+* ATP Tournaments
+  + Decline on number of tournaments overall per year
+  + Surfaces being played on changing and more limited over time
+  
+* Players
+  + Generally less players involved
+  + Players who win 0,1 maybe 2 matches all year (take a look at some player in this categor that play many tournaments)
+  
 
 # Initialize Libraries
 
@@ -225,6 +231,8 @@ player_table%>%
 
 ## Pack Circles
 
+Well this is cool looking visual and kind of shows the few players winning a ton of matches. But all players with zero wins are missing. I am not so sure how to contol this visual since right now it is copied almost directly from the example I found online. 
+
 ```{r}
 data<-player_table%>%
   select(season, player_name, num_wins)%>%
@@ -306,6 +314,26 @@ player_table%>%
 
 ```
 
+## Tournaments & Surfaces
+
+```{r}
+ATP_Base %>%
+  select (season, surface, tourney_id) %>%
+  filter(str_detect('Clay|Hard|Carpet|Grass', surface)) %>%
+  distinct()%>%
+  ggplot(aes(as.integer(season), fill=surface))+
+    geom_histogram()
+
+  
+  # group_by(season, surface)%>%
+  # summarize(season, surface, count = n())%>%
+  # distinct()%>%
+  # ggplot(aes(x=season, y=count, fill=surface)) +
+  # geom_line(aes(color=surface))
+  
+#    geom_area(alpha=0.6 , size=.5, colour="white")
+
+```
 
 
 # Conclusion
