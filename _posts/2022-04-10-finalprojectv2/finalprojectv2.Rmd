@@ -376,8 +376,10 @@ ggplot() +
   # General theme:
   theme_void() + 
   theme(legend.position="none") +
-  coord_equal()
-
+  coord_equal()+
+  
+  labs(title="1980 Players by Win Totals\n")
+    
 ```
 
 ## Player total wins histogram
@@ -387,6 +389,7 @@ This is a key chart that is beginning to paint the picture about how many ATP pl
 ```{r}
 player_table%>%
   select(season, player_id, num_wins)%>%
+  filter(season %in% c(1980,1990,2000,2010))%>%
 #  group_by(season, num_wins)%>%
 #  summarize(season, num_wins, count = n())%>%
 #  distinct()%>%
@@ -394,7 +397,8 @@ player_table%>%
   geom_histogram(binwidth = 15, fill = "SkyBlue")+
 #  scale_fill_brewer(palette = "Blues")+
   facet_grid(rows = vars(season))+
-  labs(title="Number of ATP players and win total (Binwidth=15)", x="Wins", y="Number of Players")
+  labs(title="Number of ATP players and win total (Binwidth=15)", x="Wins", y="Number of Players")+
+  theme_bw()
 
 ```
 ## Players total wins point chart 
@@ -402,16 +406,26 @@ player_table%>%
 This chart demonstrates that same point but visually it is a little more diffcult to see the trend given how many player literally win 0-1 match all year.
 
 ```{r}
+top_winner<-player_table%>%
+  select(season, player_name, num_wins)%>%
+  filter(season %in% c(1980,1990,2000,2010))%>%
+  group_by(season)%>%
+  slice(which.max(num_wins))
+
 player_table%>%
   select(season, player_id, num_wins)%>%
+  filter(season %in% c(1980,1990,2000,2010))%>%
   group_by(season, num_wins)%>%
   summarize(season, num_wins, count = n())%>%
   distinct()%>%
   ggplot(aes(x=num_wins, y=count))+
   geom_point(color = "Blue")+
   geom_smooth(fill = "SkyBlue") +
+  geom_point(data = top_winner, y=1, x=top_winner$num_wins, color="red") +
+  geom_text(data = top_winner, aes(y=1, x=top_winner$num_wins, label=top_winner$player_name), hjust=1, vjust=2, size=3)+
   facet_grid(cols = vars(season))+
-  labs(title="Number of ATP players and win totals", x="Wins", y="Number of Players")
+  labs(title="Number of ATP players and win totals", subtitle = "(Highest win total labeled)", x="Wins", y="Number of Players")+
+  theme_bw()
 
 ```
 
