@@ -1,0 +1,447 @@
+---
+title: "ATP Tennis Analysis - Final Project (Draft 2)"
+description: "Second Draft of Final Project - Using ATP Tennis Data Files will begin some analysis of player populations and success."
+author: "Jason O'Connell"
+date: "`r Sys.Date()`"
+output: 
+  distill::distill_article:
+    code_folding: true
+    toc: true
+    toc_depth: 2
+spacing: single
+---
+
+```{css}
+ul {
+  line-height: 1;
+}
+li {
+  line-height: 1;
+}
+...
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Latest Overview
+
+ATP Tennis Statistics Analysis - Iteration 8
+
+This analysis looks at the ATP tennis statistics since the beginning of the open era in 1969. The data is sourced from GitHub [include citation here] includes any Davis Cup matches including only a teepee professional tennis tournaments from each year through 2019. years 2020 and 2021 have been excluded due to interruptions in professional tournament play due to the covid-19 pandemic.
+
+An analysis of the general number of players participating in tournaments and the overall number of tournaments in the dominance of the top players is presented. Some commentary about the court surface and the number of players who win very few matches on tour will be discussed. 
+
+
+
+Items to be developed
+
+* ATP Tournaments
+  + Decline on number of tournaments overall per year
+  + Surfaces being played on changing and more limited over time
+  
+* Players
+  + Generally less players involved
+  + Players who win 0,1 maybe 2 matches all year (take a look at some player in this categor that play many tournaments)
+  + Player Network Analysis - are top players only lossing against each other.
+  + Win stats of "the Field" vs. top ranked players
+  
+
+# Initialize Libraries
+
+```{r init_libraries}
+library(tidyverse)
+library(readr)
+library(readxl)
+library(dplyr)
+library(ggplot2)
+library(treemapify)
+library(rmarkdown)
+library(packcircles)
+library(kableExtra)
+library(igraph)
+```
+
+
+# Read the data
+
+First read ATP data files, here I am using only the results from 1980, 1990, 2000, 2010 from GITHUB source.
+
+(Eventually I want to read many more years using a for loop and/or function)
+
+The data includes detailed information about each match played on the ATP tour in a given year.
+
+* Tournament Data 
+
+  + tourney-id (YYYY-###)  
+  + tourney_name
+  +  surface
+  + draw_size
+  + tourney_level 
+  + tourney_date
+
+* Match Data
+
+  + match_num
+  + score
+  + best_of
+  + minutes
+  + round
+
+* Player Data (for each winner & loser): 
+
+  + _id
+  + _seed
+  + _entry (WC, Q)
+  + _name
+  + _hand
+  + _height
+  + _ioc
+  + _age
+  + _rank
+  + _points
+
+* Match Statistics (for each w & l): 
+
+  + _ace
+  + _df
+  + _svpt
+  + _1stIn
+  + _1stWon
+  + _2ndWon
+  + _svGms
+  + _bpSaved
+  + _bpFaced 
+
+# Create Working Data Set
+
+The data is collected into a single dataframe by pending each Year's ATP tournament data file. These files include both tournament match information and match information from other competitions such as the Davis Cup; Davis Cup matches will be excluded from the analysis.
+
+
+Using a for loop, I will append each row to the table atp_base. Need to check if data frame exists for the first time through & also use distinct function on subsequent runs to prevent appending the same same season twice.
+
+Finally I am only interested in ATP tournament data so will filter our Davis Cup matches which are also included in the data set.
+
+```{r}
+# atp_base1 <- read.csv("https://raw.githubusercontent.com/JeffSackmann/tennis_atp/master/atp_matches_1969.csv")
+# atp_files <- paste("https://raw.githubusercontent.com/JeffSackmann/tennis_atp/master/atp_matches_",1970:2019,".csv", sep = '')
+# atp_files %>%    
+#   map_dfr(~ bind_rows(atp_base1, read.csv(.)))
+```
+
+
+```{r}
+for(i in 1969:2019) {
+
+  if (exists("atp_base")) {
+    atp_base <- bind_rows(
+      atp_base, 
+      mutate(
+        read.csv(paste("https://raw.githubusercontent.com/JeffSackmann/tennis_atp/master/atp_matches_",toString(i),".csv", sep = "")),
+        season = i)) %>%
+      distinct()
+  } else {
+    atp_base <- mutate(
+      read.csv(paste("https://raw.githubusercontent.com/JeffSackmann/tennis_atp/master/atp_matches_",toString(i),".csv", sep = "")),
+      season = i)
+  }
+  atp_base <- atp_base %>% 
+    filter(!str_detect("D", tourney_level))
+}
+```
+
+# Base Statistics
+
+Lets start with some simple statistics by year. ^[Only ATP tournament matches are include. Excludes Davis Cup, Challenge, etc.]
+
+## Tournament Matches
+
+With the advent of the open era of professional tennis in 1969 conversion from the historically amateur status tournaments to professional tournaments was accomplished over the course of 19/69 1971 demonstrated by the growth in the number of tournaments. Since a peak in 1975 the overall number of matches played on the 80P professional tennis tour has declined. In 1988 players took more control and took a more active role in governance of the 80 p if participation increased for a few years. However in the early 90s there's a significant increase in the prize money at each tournament requiring greater levels of commitment from sponsors in an overall decline in the number of matches going forward.
+
+Also of Interest is the type of surface that is being played on for each tournament professional tennis match. In recent years hard courts have come to dominate the game of tennis. Early in the open era of tennis tournaments four distinct surfaces were played; clay, grass, hard courts and, when indoors, carpet. In more recent years the play on carpet has been eliminated as technology has allowed 4 temporary hard courts to be used in Indoor Stadium arenas. Grass Court tennis originally the surface of choice for 3 out of the 4 grand slam tournaments has gradually been reduced with the conversion of the Australian Open and the US Open to various versions of hard court. The last several decades the number of tournaments in matches played on grass courts has remained relatively stable due to the commitment of the All England Club to host Wimbledon championships on grass and several tournaments Also played on grass for players to prepare for the major. 
+
+```{r}
+atp_base %>%
+  group_by(season) %>%
+  summarize(season, num_matches = n()) %>%
+  distinct() %>%
+#  kable(col.names = c("Season","Total Matches"), caption = "Number of Tournament Matches by Year")
+  ggplot(aes(x=season,y=num_matches)) +
+    geom_line(color="#0000FF") +
+    labs(x="Season", y="ATP Matches Played", title="Total ATP Matched Played by Season\n") +
+    theme_classic()+
+    theme(axis.text.x = element_text(size = 10), axis.title.x = element_text(size = 12),
+        axis.text.y = element_text(size = 10), axis.title.y = element_text(size = 12),
+        plot.title = element_text(size = 14, face = "bold", color = "darkblue"))
+
+atp_base %>%
+  filter(str_detect('Clay|Hard|Carpet|Grass', surface)) %>%
+  group_by(season, surface) %>%
+  summarize(season, surface, num_matches = n()) %>%
+  distinct() %>%
+#  kable(col.names = c("Season","Total Matches"), caption = "Number of Tournament Matches by Year")
+  ggplot(aes(x=season,y=num_matches)) +
+    geom_line(aes(color=surface)) +
+    facet_grid(cols = vars(surface)) +
+    scale_color_manual(labels=c("Carpet","Clay","Grass","Hard"), values=c("orange", "#FF0000", "darkgreen", "#0000FF")) +
+    guides(x = guide_axis(n.dodge = 2))+
+    labs(x="Season", y="ATP Matches Played", title="Total ATP Matched Played by Season by Surface\n", color = "Surface\n") +
+    theme_minimal()
+```
+
+<aside>
+Excluding Davis Cup Matches
+</aside>
+
+## Tournaments
+
+As can be seen in the figure below the number of tournaments being played follows the same pattern as the total number of matches played by season given that each tournament is played with a fairly consistent number of entries.
+
+
+```{r}
+atp_base %>%
+  select(season,tourney_id) %>%
+  distinct() %>%
+  group_by(season) %>%
+  summarize(season, num_tournaments = n()) %>%
+  distinct() %>%
+#  kable(col.names = c("Season","Tournaments"), caption = "Number of Tournaments by Year")
+  ggplot(aes(x=season,y=num_tournaments)) +
+    geom_line(color="blue")+
+    labs(x="Season", y="ATP Tournaments Held", title="Total ATP Tournaments Held by Season\n") +
+    theme_classic()+
+    theme(axis.text.x = element_text(size = 10), axis.title.x = element_text(size = 12),
+        axis.text.y = element_text(size = 10), axis.title.y = element_text(size = 12),
+        plot.title = element_text(size = 14, face = "bold", color = "darkblue"))
+
+```
+
+## Players
+
+More Surprisingly however is that overall participation in the number of players participating in ATP tournaments overall has sharply decreased consistently through the decades. Historically there was a smaller contingent of players who would travel to all the tournaments in the participation from local qualifiers contributed to the overall participation rates being much higher. Since 1990 ended the escalation of prize money in sponsorships at each tournament a greater number of players have been able to support travel expenses at two tournaments throughout the globe. As a consequence each tournament is getting higher ranked players throughout the draw of the tournament.  to maintain prize money in sponsorships and TV viewership getting the top ranked players to participate in Tournaments has become essential. and therefore the number of spots open to qualifiers who made live more local to the tournament geography has diminished.
+
+```{R}
+bind_rows(
+  atp_base %>%
+    select(season,winner_id) %>%
+    distinct(),
+  atp_base %>%
+    select(season,loser_id) %>%
+    distinct()
+) %>%
+  group_by(season) %>%
+  summarize(season, num_players = n()) %>%
+  distinct() %>%
+#  kable(col.names = c("Season","Players"), caption = "Number of Players by Year")
+  ggplot(aes(x=season,y=num_players)) +
+    geom_line(color="blue")+
+    labs(x="Season", y="ATP Players Involved", title="Total ATP Professional Participation by Season\n") +
+    theme_classic()+
+    theme(axis.text.x = element_text(size = 10), axis.title.x = element_text(size = 12),
+        axis.text.y = element_text(size = 10), axis.title.y = element_text(size = 12),
+        plot.title = element_text(size = 14, face = "bold", color = "darkblue"))
+
+```
+
+## Top Winners
+
+If we look at the top players in terms of wins in a single season we can see that a significant number of players from the early 1970s and 1980s. This is due to the fact that the top players were playing in many more tournaments each week then today's top ranked players. The only player since 1982 to be included in the top 20 wins in a single 80P season is Roger Federer in 2006 But we will see later Ted Rogers 2006 season what's the second best season for a male professional tennis player in history. 
+
+```{r}
+atp_base %>%
+    select(season,winner_id, winner_name) %>%
+    group_by(season, winner_id, winner_name) %>%
+    summarize(season, winner_id, winner_name, num_wins = n()) %>%
+    distinct() %>%
+    arrange(desc(num_wins)) %>%
+    head(20)%>%
+    kable(col.names = c("Season","Player ID","Player Name","Wins"), caption = "Top Winners")%>%
+    remove_column(c(2))
+```
+
+# Create Player Statistics Table
+
+```{r}
+player_table<-full_join(
+  atp_base %>%    
+    select(season,winner_id, winner_name) %>%
+    group_by(season, winner_id, winner_name) %>%
+    summarize(season, winner_id, winner_name, num_wins = n()) %>%
+    distinct() %>%
+    rename(player_id = winner_id, player_name = winner_name),
+  atp_base %>%
+    select(season,loser_id, loser_name) %>%
+    group_by(season, loser_id, loser_name) %>%
+    summarize(season, loser_id, loser_name, num_loses = n()) %>%
+    distinct() %>%
+    rename(player_id = loser_id, player_name = loser_name),
+  by=c("season"="season","player_id"="player_id","player_name"="player_name")
+) %>%
+  mutate(num_wins=if_else(is.na(num_wins), as.integer(0), num_wins)) %>%
+  mutate(num_matches=num_wins+num_loses, win_percent=100*num_wins/(num_wins+num_loses))
+
+```
+
+## Player Statistics
+
+John McEnroe's 1984 season is considered by most as the most dominate Men's tennis season ever (ranked #3 all-time behind Steffi Graff's 1988 and Martina Navratilova's 1983 seasons) according to the Bleacher Report ^[https://bleacherreport.com/articles/1708407-ranking-the-10-most-dominant-seasons-in-tennis-history]
+
+```{r}
+player_table%>%
+  select(season, player_id, player_name, win_percent)%>%
+  arrange(desc(win_percent))%>%
+#  top_n(20, win_percent) %>%
+  head(20)%>%
+  kable(digits = 0, col.names = c("Season","Player ID","Player Name","Wins Percent"), caption = "Top Winners")%>%
+  remove_column(c(2))
+
+```
+
+## Network
+
+```{r}
+
+# # data
+# set.seed(1)
+# data <- matrix(sample(0:2, 15, replace=TRUE), nrow=3)
+# colnames(data) <- letters[1:5]
+# rownames(data) <- LETTERS[1:3]
+# 
+# # create the network object
+# network <- graph_from_incidence_matrix(data)
+# 
+# # plot it
+# plot(network)
+
+# create data:
+vSeason <- as.integer("1990")
+player_sample <- player_table %>% 
+  filter(season==vSeason, num_loses > 10) %>%
+  arrange(desc(win_percent)) %>%
+  head(10) %>%
+  select(player_name)
+
+links <- atp_base %>%
+  filter(season==vSeason, loser_name%in%player_sample$player_name, winner_name%in%player_sample$player_name)%>%
+  select(loser_name, winner_name)
+  
+
+# links <- data.frame(
+#     source=c("A","A", "A", "A", "A","F", "B"),
+#     target=c("B","B", "C", "D", "F","A","E")
+#     )
+
+# create the network object
+network <- graph_from_data_frame(d=links, directed=F)
+
+# plot it
+plot(network,main="1990 Network Diagram of Matches between Top 10 Players\n")
+
+```
+
+## Pack Circles
+
+Well this is cool looking visual and kind of shows the few players winning a ton of matches. But all players with zero wins are missing. I am not so sure how to contol this visual since right now it is copied almost directly from the example I found online. 
+
+```{r}
+data<-player_table%>%
+  select(season, player_name, num_wins)%>%
+  filter(season == "1980")%>%
+  arrange(desc(num_wins))%>%
+  head(10)
+
+# player_table%>%
+#   select(season, player_name, num_wins)%>%
+#   filter(season == "1980")%>%
+#   groud_by(season,num_wind)
+#   arrange(desc(num_wins))%>%
+#   head(10)
+
+
+packing<-circleProgressiveLayout(data$num_wins, sizetype='area')
+
+data<-cbind(data,packing)
+
+dat.gg<-circleLayoutVertices(packing, npoints=50)
+
+ggplot() + 
+  
+  # Make the bubbles
+  geom_polygon(data = dat.gg, aes(x, y, group = id, fill=as.factor(id)), colour = "black", alpha = 0.6) +
+  
+  # Add text in the center of each bubble + control its size
+  geom_text(data = data, aes(x, y, size=num_wins, label = paste(player_name,"\n",num_wins))) +
+  scale_size_continuous(range = c(1,4)) +
+  
+  # General theme:
+  theme_void() + 
+  theme(legend.position="none") +
+  coord_equal()
+
+```
+
+## Player total wins histogram
+
+This is a key chart that is beginning to paint the picture about how many ATP players are participating in tournaments but winning very few matches. 
+
+```{r}
+player_table%>%
+  select(season, player_id, num_wins)%>%
+#  group_by(season, num_wins)%>%
+#  summarize(season, num_wins, count = n())%>%
+#  distinct()%>%
+  ggplot(aes(x=num_wins))+
+  geom_histogram(binwidth = 15, fill = "SkyBlue")+
+#  scale_fill_brewer(palette = "Blues")+
+  facet_grid(rows = vars(season))+
+  labs(title="Number of ATP players and win total (Binwidth=15)", x="Wins", y="Number of Players")
+
+```
+## Players total wins point chart 
+
+This chart demonstrates that same point but visually it is a little more diffcult to see the trend given how many player literally win 0-1 match all year.
+
+```{r}
+player_table%>%
+  select(season, player_id, num_wins)%>%
+  group_by(season, num_wins)%>%
+  summarize(season, num_wins, count = n())%>%
+  distinct()%>%
+  ggplot(aes(x=num_wins, y=count))+
+  geom_point(color = "Blue")+
+  geom_smooth(fill = "SkyBlue") +
+  facet_grid(cols = vars(season))+
+  labs(title="Number of ATP players and win totals", x="Wins", y="Number of Players")
+
+```
+
+## Treemap
+
+Some treemaps
+
+
+```{r}
+player_table%>%
+  select(season, player_name, num_wins)%>%
+  filter(season == "1980")%>%
+  group_by(season, num_wins)%>%
+  summarize(season, num_wins, count = n())%>%
+  distinct()%>%
+  ggplot(aes(area = count, fill = count, label = num_wins))+
+    geom_treemap()+
+  scale_fill_gradient2(high="red", mid="white",low="blue",midpoint = 100) +
+   geom_treemap_text(colour = "white", place = "center", alpha = 0.5)+
+  labs(title="ATP 1980, Label = Number of wins, Size = Number of Players")
+
+```
+
+
+# Conclusion
+
+Final Paper:
+1. Messing around with different visuals to see how they work and if they help my project.
+I've started working with the part of the data set to support my hypothesis that there are many, many players at the fringe of ATP who are not winning enough matches to support there career. At the same time there are a select few who win the majority of matches (and associate prize money) but it's all made possible by those striving for the top but never making it.
+
+
+
+
