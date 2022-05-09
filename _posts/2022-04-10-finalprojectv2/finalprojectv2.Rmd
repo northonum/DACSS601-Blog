@@ -123,10 +123,8 @@ Using a for loop, I will append each row to the table atp_base. Need to check if
 Finally I am only interested in ATP tournament data so will filter our Davis Cup matches which are also included in the data set.
 
 ```{r}
-# atp_base1 <- read.csv("https://raw.githubusercontent.com/JeffSackmann/tennis_atp/master/atp_matches_1969.csv")
-# atp_files <- paste("https://raw.githubusercontent.com/JeffSackmann/tennis_atp/master/atp_matches_",1970:2019,".csv", sep = '')
-# atp_files %>%    
-#   map_dfr(~ bind_rows(atp_base1, read.csv(.)))
+atp_files <- paste("https://raw.githubusercontent.com/JeffSackmann/tennis_atp/master/atp_matches_",1969:2019,".csv", sep = '')
+atp_base1<-map_dfr(atp_files, read_csv)
 ```
 
 
