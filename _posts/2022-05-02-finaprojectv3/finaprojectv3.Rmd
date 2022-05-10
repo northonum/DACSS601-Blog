@@ -393,7 +393,7 @@ player_nodes<-player_nodes%>%
 visNetwork(player_nodes, player_links, height = "500px", width = "100%",
            main="Matches between Top 10 Players (1984)",
            footer="Highlighting John McEnroe's wins (green) & losses (red)")%>%
-  visLayout(133,improvedLayout = TRUE)
+  visLayout(randomSeed = 133,improvedLayout = TRUE)
 ```
 
 
