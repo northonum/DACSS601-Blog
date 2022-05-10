@@ -390,14 +390,28 @@ player_nodes<-player_nodes%>%
             border_width = 2
             )
 
+
+
+
+# visNetwork(player_vert, player_links, height="400px", background="#eeefff",
+#            main="Network", submain="And what a great network it is!",
+#            footer= "Hyperlinks and mentions among media sources")
+# 
+# vis.nodes <- player_vert%>%
+#   rename(id = player_name)%>%
+#   mutate(label = id, shape="dot", shadow=TRUE, title = total_weight, size=(total_weight+1)*1.5, border_width = 2)
+# 
+# vis.links <- player_links%>%
+#   rename(from = loser_name, to = winner_name)%>%
+#   mutate(width = weight+1, color="gray",smooth=TRUE,shadow=FALSE)%>%
+#   select(from,to,width,color,smooth,shadow)
+
 visNetwork(player_nodes, player_links, height = "500px", width = "100%",
            main="Matches between Top 10 Players (1984)",
-           footer="Highlighting John McEnroe's wins (green) & losses (red)")%>%
+           footer="Highlighting John McEnroe's wins (greem) & losses (red)\nInteractive please click/hover on nodes/edges")%>%
   visLayout(133,improvedLayout = TRUE)
+
 ```
-
-
-.
 
 # Comparison of players grouped into 10 categories of ranking
 
