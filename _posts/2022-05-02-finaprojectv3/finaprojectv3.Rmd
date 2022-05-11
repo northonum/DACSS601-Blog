@@ -344,7 +344,7 @@ player_table%>%
 
 Let's take a closer look at the 1984 ATP season and see the matches being played amongst the most successful players that year.
 
-```{r}
+```{r echo=TRUE, fig.width=10, fig.height=10}
 # create data:
 vSeason <- as.integer("1984")
 player_nodes <- player_table%>% 
@@ -434,7 +434,7 @@ player_table%>%
 
 Let's take a look at this data in a slight different visual across the entire  4+ decade period of ATP match data. We can clearly see that the top third ranked professional tennis players are accounting for the lions share of maych wins.
 
-```{r}
+```{r, layout="l-body-outset", preview=TRUE}
 data<-player_table%>%
   filter(season>1973)%>%
   group_by(rank_binA)%>%
